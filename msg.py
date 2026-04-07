@@ -22,7 +22,10 @@ rho_hf = st.slider("Correlation between Asset 1 and Asset 2", min_value=-1.0, ma
 
 r_free = st.number_input("Risk-Free Rate (%)", value=2.0, step=0.1) / 100
 gamma = st.number_input("Risk Aversion (γ)", value=5.0, step=0.1, min_value=0.1)
-
+st.subheader("ESG Inputs")
+esg1 = st.number_input("Asset 1 ESG Score", value=70.0, step=1.0)
+esg2 = st.number_input("Asset 2 ESG Score", value=85.0, step=1.0)
+lambda_esg = st.number_input("ESG Preference (λ)", value=0.05, step=0.01, min_value=0.0)
 # ------------------------------
 # Functions
 # ------------------------------
@@ -36,84 +39,100 @@ def portfolio_sd(w1, sd1, sd2, rho):
         + 2 * rho * w1 * (1 - w1) * sd1 * sd2
     )
     return np.sqrt(max(variance, 0))
+def portfolio_esg(w1, esg1, esg2):
+    return w1 * esg1 + (1 - w1) * esg2
 
+def traditional_utility(ret, sd, gamma):
+    return ret - (gamma / 2) * (sd ** 2)
+
+def utility_function(ret, sd, gamma, lambda_esg, esg_score):
+    return ret - (gamma / 2) * (sd ** 2) + lambda_esg * (esg_score / 100)
 # ------------------------------
 # Run optimisation
 # ------------------------------
 if st.button("Calculate Optimal Portfolio"):
     weights = np.linspace(0, 1, 1000)
-    sharpe_ratios = []
+
+    returns = []
+    risks = []
+    esg_scores = []
+    traditional_utilities = []
+    esg_utilities = []
 
     for w in weights:
         ret = portfolio_ret(w, r_h, r_f)
         sd = portfolio_sd(w, sd_h, sd_f, rho_hf)
-        if sd > 0:
-            sharpe = (ret - r_free) / sd
-            sharpe_ratios.append(sharpe)
-        else:
-            sharpe_ratios.append(-np.inf)
+        esg_score = portfolio_esg(w, esg1, esg2)
 
-    max_idx = np.argmax(sharpe_ratios)
-    w1_tangency = weights[max_idx]
-    w2_tangency = 1 - w1_tangency
+        trad_u = traditional_utility(ret, sd, gamma)
+        esg_u = utility_function(ret, sd, gamma, lambda_esg, esg_score)
 
-    ret_tangency = portfolio_ret(w1_tangency, r_h, r_f)
-    sd_tangency = portfolio_sd(w1_tangency, sd_h, sd_f, rho_hf)
+        returns.append(ret)
+        risks.append(sd)
+        esg_scores.append(esg_score)
+        traditional_utilities.append(trad_u)
+        esg_utilities.append(esg_u)
 
-    # Optimal portfolio
-    if sd_tangency > 0:
-        w_tangency_optimal = (ret_tangency - r_free) / (gamma * sd_tangency**2)
+    # Traditional optimal portfolio
+    trad_idx = np.argmax(traditional_utilities)
+    w1_trad = weights[trad_idx]
+    w2_trad = 1 - w1_trad
+    ret_trad = returns[trad_idx]
+    sd_trad = risks[trad_idx]
+    esg_trad = esg_scores[trad_idx]
+    utility_trad = traditional_utilities[trad_idx]
+
+    # ESG-adjusted optimal portfolio
+    esg_idx = np.argmax(esg_utilities)
+    w1_esg = weights[esg_idx]
+    w2_esg = 1 - w1_esg
+    ret_esg = returns[esg_idx]
+    sd_esg = risks[esg_idx]
+    esg_portfolio = esg_scores[esg_idx]
+    utility_esg = esg_utilities[esg_idx]
+
+    st.header("Portfolio Comparison")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Traditional Portfolio")
+        st.write(f"**Asset 1 Weight:** {w1_trad * 100:.2f}%")
+        st.write(f"**Asset 2 Weight:** {w2_trad * 100:.2f}%")
+        st.write(f"**Expected Return:** {ret_trad * 100:.2f}%")
+        st.write(f"**Portfolio Risk:** {sd_trad * 100:.2f}%")
+        st.write(f"**Portfolio ESG Score:** {esg_trad:.2f}")
+        st.write(f"**Utility:** {utility_trad:.4f}")
+
+    with col2:
+        st.subheader("ESG-Adjusted Portfolio")
+        st.write(f"**Asset 1 Weight:** {w1_esg * 100:.2f}%")
+        st.write(f"**Asset 2 Weight:** {w2_esg * 100:.2f}%")
+        st.write(f"**Expected Return:** {ret_esg * 100:.2f}%")
+        st.write(f"**Portfolio Risk:** {sd_esg * 100:.2f}%")
+        st.write(f"**Portfolio ESG Score:** {esg_portfolio:.2f}")
+        st.write(f"**Utility:** {utility_esg:.4f}")
+
+    # Interpretation
+    st.subheader("Interpretation")
+    if esg_portfolio > esg_trad:
+        st.write(
+            "Including ESG preferences shifts the recommended portfolio toward the asset mix with a higher sustainability score."
+        )
     else:
-        w_tangency_optimal = 0
+        st.write(
+            "Including ESG preferences does not materially change the portfolio for these inputs."
+        )
 
-    w1_optimal = w_tangency_optimal * w1_tangency
-    w2_optimal = w_tangency_optimal * w2_tangency
-    w_rf_optimal = 1 - w_tangency_optimal
-
-    ret_optimal = r_free + w_tangency_optimal * (ret_tangency - r_free)
-    sd_optimal = abs(w_tangency_optimal) * sd_tangency
-
-    # ------------------------------
-    # Display results
-    # ------------------------------
-    st.header("Optimal Portfolio Weights")
-    st.write(f"**Risk-Free Asset:** {w_rf_optimal * 100:.2f}%")
-    st.write(f"**Asset 1:** {w1_optimal * 100:.2f}%")
-    st.write(f"**Asset 2:** {w2_optimal * 100:.2f}%")
-    st.write(f"**Expected Return:** {ret_optimal * 100:.2f}%")
-    st.write(f"**Portfolio Risk (Std Dev):** {sd_optimal * 100:.2f}%")
-
-    # ------------------------------
-    # Plot Efficient Frontier
-    # ------------------------------
-    weights_plot = np.linspace(0, 1, 200)
-    returns_frontier = [portfolio_ret(w, r_h, r_f) for w in weights_plot]
-    sds_frontier = [portfolio_sd(w, sd_h, sd_f, rho_hf) for w in weights_plot]
-
+    # Plot
     fig, ax = plt.subplots(figsize=(8, 5))
-
-    # Efficient frontier
-    ax.plot(sds_frontier, returns_frontier, linewidth=2, label="Efficient Frontier")
-
-    # Capital Market Line
-    if sd_tangency > 0:
-        sd_max = max(sds_frontier) * 1.2
-        sd_cml = np.linspace(0, sd_max, 100)
-        ret_cml = r_free + (ret_tangency - r_free) / sd_tangency * sd_cml
-        ax.plot(sd_cml, ret_cml, "--", linewidth=2, label="Capital Market Line")
-
-    # Tangency portfolio
-    ax.scatter(sd_tangency, ret_tangency, s=100, marker="*", label="Tangency Portfolio")
-
-    # Optimal portfolio
-    ax.scatter(sd_optimal, ret_optimal, s=100, marker="D", label="Optimal Portfolio")
-
-    # Risk-free asset
-    ax.scatter(0, r_free, s=80, marker="s", label="Risk-Free Asset")
+    ax.plot(risks, returns, linewidth=2, label="Efficient Frontier")
+    ax.scatter(sd_trad, ret_trad, s=120, marker="*", label="Traditional Portfolio")
+    ax.scatter(sd_esg, ret_esg, s=100, marker="D", label="ESG-Adjusted Portfolio")
 
     ax.set_xlabel("Risk (Standard Deviation)")
     ax.set_ylabel("Expected Return")
-    ax.set_title("Portfolio Optimization")
+    ax.set_title("Traditional vs ESG-Adjusted Portfolio")
     ax.legend()
     ax.grid(True, alpha=0.3)
 
