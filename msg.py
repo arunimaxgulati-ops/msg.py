@@ -23,9 +23,23 @@ rho_hf = st.slider("Correlation between Asset 1 and Asset 2", min_value=-1.0, ma
 r_free = st.number_input("Risk-Free Rate (%)", value=2.0, step=0.1) / 100
 gamma = st.number_input("Risk Aversion (γ)", value=5.0, step=0.1, min_value=0.1)
 st.subheader("ESG Inputs")
-esg1 = st.number_input("Asset 1 ESG Score", value=70.0, step=1.0)
-esg2 = st.number_input("Asset 2 ESG Score", value=85.0, step=1.0)
+st.subheader("ESG Inputs (E, S, G Breakdown)")
+
+st.write("Asset 1 ESG Scores")
+e1 = st.number_input("Asset 1 - Environmental Score", value=70.0)
+s1 = st.number_input("Asset 1 - Social Score", value=65.0)
+g1 = st.number_input("Asset 1 - Governance Score", value=75.0)
+
+st.write("Asset 2 ESG Scores")
+e2 = st.number_input("Asset 2 - Environmental Score", value=80.0)
+s2 = st.number_input("Asset 2 - Social Score", value=85.0)
+g2 = st.number_input("Asset 2 - Governance Score", value=78.0)
+
 lambda_esg = st.number_input("ESG Preference (λ)", value=0.05, step=0.01, min_value=0.0)
+# Combine ESG scores (simple average)
+esg1 = (e1 + s1 + g1) / 3
+esg2 = (e2 + s2 + g2) / 3
+
 # ------------------------------
 # Functions
 # ------------------------------
