@@ -104,6 +104,22 @@ if st.button("Calculate Optimal Portfolio"):
     sd_esg = risks[esg_idx]
     esg_portfolio = esg_scores[esg_idx]
     utility_esg = esg_utilities[esg_idx]
+    
+    # Percentage differences: ESG-adjusted vs Traditional
+    if esg_trad != 0:
+        esg_improvement_pct = ((esg_portfolio - esg_trad) / esg_trad) * 100
+    else:
+        esg_improvement_pct = 0
+
+    if ret_trad != 0:
+        return_change_pct = ((ret_esg - ret_trad) / ret_trad) * 100
+    else:
+        return_change_pct = 0
+
+    if sd_trad != 0:
+        risk_change_pct = ((sd_esg - sd_trad) / sd_trad) * 100
+    else:
+        risk_change_pct = 0
 
     st.header("Portfolio Comparison")
 
@@ -126,6 +142,25 @@ if st.button("Calculate Optimal Portfolio"):
         st.write(f"**Portfolio Risk:** {sd_esg * 100:.2f}%")
         st.write(f"**Portfolio ESG Score:** {esg_portfolio:.2f}")
         st.write(f"**Utility:** {utility_esg:.4f}")
+
+        st.subheader("ESG Improvement vs Traditional")
+
+    st.write(f"**Change in Portfolio ESG Score:** {esg_improvement_pct:.2f}%")
+    st.write(f"**Change in Expected Return:** {return_change_pct:.2f}%")
+    st.write(f"**Change in Portfolio Risk:** {risk_change_pct:.2f}%")
+
+    if esg_improvement_pct > 0 and return_change_pct < 0:
+        st.write(
+            "The ESG-adjusted portfolio improves sustainability, but this comes with a reduction in expected return."
+        )
+    elif esg_improvement_pct > 0 and return_change_pct >= 0:
+        st.write(
+            "The ESG-adjusted portfolio improves sustainability without reducing expected return."
+        )
+    else:
+        st.write(
+            "Including ESG preferences does not materially improve the ESG profile under the current inputs."
+        )
 
     # Interpretation
     st.subheader("Interpretation")
