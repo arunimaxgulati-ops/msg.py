@@ -21,29 +21,6 @@ sd_f = st.number_input("Asset 2 Standard Deviation (%)", value=20.0, step=0.1) /
 rho_hf = st.slider("Correlation between Asset 1 and Asset 2", min_value=-1.0, max_value=1.0, value=-0.2, step=0.01)
 
 r_free = st.number_input("Risk-Free Rate (%)", value=2.0, step=0.1) / 100
-gamma = st.number_input( "Risk Aversion (γ)",
-    value=float(default_gamma),
-    step=0.1,
-    min_value=0.1)
-
-st.subheader("ESG Inputs")
-st.subheader("ESG Inputs (E, S, G Breakdown)")
-
-st.write("Asset 1 ESG Scores")
-e1 = st.number_input("Asset 1 - Environmental Score", value=70.0)
-s1 = st.number_input("Asset 1 - Social Score", value=65.0)
-g1 = st.number_input("Asset 1 - Governance Score", value=75.0)
-
-st.write("Asset 2 ESG Scores")
-e2 = st.number_input("Asset 2 - Environmental Score", value=80.0)
-s2 = st.number_input("Asset 2 - Social Score", value=85.0)
-g2 = st.number_input("Asset 2 - Governance Score", value=78.0)
-
-lambda_esg = st.number_input(
-    "ESG Preference (λ)",
-    value=float(default_lambda),
-    step=0.01,
-    min_value=0.0)
 st.subheader("Investor Preference Presets")
 
 preset = st.selectbox(
@@ -61,6 +38,33 @@ elif preset == "ESG Focused":
 else:
     default_gamma = 5.0
     default_lambda = 0.05
+gamma = st.number_input(
+    "Risk Aversion (γ)",
+    value=float(default_gamma),
+    step=0.1,
+    min_value=0.1
+)
+
+lambda_esg = st.number_input(
+    "ESG Preference (λ)",
+    value=float(default_lambda),
+    step=0.01,
+    min_value=0.0
+)
+
+st.subheader("ESG Inputs")
+st.subheader("ESG Inputs (E, S, G Breakdown)")
+
+st.write("Asset 1 ESG Scores")
+e1 = st.number_input("Asset 1 - Environmental Score", value=70.0)
+s1 = st.number_input("Asset 1 - Social Score", value=65.0)
+g1 = st.number_input("Asset 1 - Governance Score", value=75.0)
+
+st.write("Asset 2 ESG Scores")
+e2 = st.number_input("Asset 2 - Environmental Score", value=80.0)
+s2 = st.number_input("Asset 2 - Social Score", value=85.0)
+g2 = st.number_input("Asset 2 - Governance Score", value=78.0)
+
 # Combine ESG scores (simple average)
 esg1 = (e1 + s1 + g1) / 3
 esg2 = (e2 + s2 + g2) / 3
