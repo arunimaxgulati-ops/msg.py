@@ -21,7 +21,11 @@ sd_f = st.number_input("Asset 2 Standard Deviation (%)", value=20.0, step=0.1) /
 rho_hf = st.slider("Correlation between Asset 1 and Asset 2", min_value=-1.0, max_value=1.0, value=-0.2, step=0.01)
 
 r_free = st.number_input("Risk-Free Rate (%)", value=2.0, step=0.1) / 100
-gamma = st.number_input("Risk Aversion (γ)", value=5.0, step=0.1, min_value=0.1)
+gamma = st.number_input( "Risk Aversion (γ)",
+    value=float(default_gamma),
+    step=0.1,
+    min_value=0.1)
+
 st.subheader("ESG Inputs")
 st.subheader("ESG Inputs (E, S, G Breakdown)")
 
@@ -35,7 +39,28 @@ e2 = st.number_input("Asset 2 - Environmental Score", value=80.0)
 s2 = st.number_input("Asset 2 - Social Score", value=85.0)
 g2 = st.number_input("Asset 2 - Governance Score", value=78.0)
 
-lambda_esg = st.number_input("ESG Preference (λ)", value=0.05, step=0.01, min_value=0.0)
+lambda_esg = st.number_input(
+    "ESG Preference (λ)",
+    value=float(default_lambda),
+    step=0.01,
+    min_value=0.0)
+st.subheader("Investor Preference Presets")
+
+preset = st.selectbox(
+    "Choose an investor profile",
+    ["Custom", "Profit Motivated", "Balanced", "ESG Focused"])
+if preset == "Profit Motivated":
+    default_gamma = 2.0
+    default_lambda = 0.01
+elif preset == "Balanced":
+    default_gamma = 5.0
+    default_lambda = 0.05
+elif preset == "ESG Focused":
+    default_gamma = 7.0
+    default_lambda = 0.10
+else:
+    default_gamma = 5.0
+    default_lambda = 0.05
 # Combine ESG scores (simple average)
 esg1 = (e1 + s1 + g1) / 3
 esg2 = (e2 + s2 + g2) / 3
